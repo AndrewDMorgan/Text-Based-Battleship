@@ -93,7 +93,7 @@ void RenderBaord(BattleShip battleShips[], int hitsX[], int hitsY[], int hits, i
     std::cout << "----------------------" << std::endl;
 }
 
-
+// the main program
 int main()
 {
     // the number of each ship (so its changeable and because I don't know how many of each there are)
@@ -134,8 +134,8 @@ int main()
         RenderBaord(ships1, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, i + 1);
         while (!placed)
         {
-            // printing out the basic information
-            std::cout << shipNames[shipIndex] << "\nSize: " << shipSizes[shipIndex] << "\np to place\nr to rotate\nwasd to move\n > ";
+            // printing out the basic information (size, inputs, ect...)
+            std::cout << shipNames[shipIndex] << "\nSize: " << shipSizes[shipIndex] + 1 << "\np to place\nr to rotate\nwasd to move\n > ";
             std::cin >> input;
             
             // interpreting the inputed information
@@ -169,6 +169,6 @@ int main()
         currentType += 1./(float)numShips[shipIndex];  // incrementing the type index
     }
 
-    return 0;
+    return 0;  // ending the program
 }
 
