@@ -1,8 +1,27 @@
 #include <iostream>
+#include <math.h>
 
 // the grid size (so you could change it if you wanted to)
 static int gridX = 10;
 static int gridY = 10;
+
+// the number of each ship (so its changeable and because I don't know how many of each there are)
+static int numCarriers    = 1;
+static int numBattleships = 1;
+static int numCruisers    = 1;
+static int numSubmarines  = 1;
+static int numDestroyers  = 1;
+
+static int shipSizes[5] = {4, 3, 2, 2, 1};  // the length of the ships (1 less than the actuall size)
+static std::string shipNames[5] = {"Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"};
+
+// some info on the ships (based on the settings)
+static int totalShips = numCarriers + numBattleships + numCruisers + numSubmarines + numDestroyers;
+static int numShips[5] = {numCarriers, numBattleships, numCruisers, numSubmarines, numDestroyers};
+
+// an empty list of ints (for use when placing ships sense there are no hits/misses)
+static int emptyIntList[0];
+
 
 // stores the info on a ship (reducing code and simplifying the code)
 class BattleShip
@@ -11,17 +30,21 @@ class BattleShip
 
         int sizeX, sizeY;  // the size of the ship
         int posX , posY;   // the position of the ship
+        int length;  // the length of the battleship
         bool* hit;
 
         BattleShip() = default;
         
         // the initzialization of the BattleShip class
-        BattleShip(int sizeX_, int sizeY_, int posX_, int posY_, bool* hit_)
+        BattleShip(int sizeX_, int sizeY_, int posX_, int posY_, int length_, bool* hit_)
         {
+            // initializing the variables
             sizeX = sizeX_;
             sizeY = sizeY_;
             posX  = posX_;
             posY  = posY_;
+
+            length = length_;
 
             hit = hit_;
         }
@@ -43,11 +66,53 @@ class BattleShip
             bool brPoint = PointRectCollition(px + sx, py     );
             return tlPoint && trPoint && blPoint && brPoint;
         }
+
+        // checks if a movement will keep the ship on the board
+        bool CheckMovement(int dx, int dy)
+        {
+            // finding the two ends of the ship
+            int x1 = posX  + dx;
+            int x2 = sizeX + x1;
+
+            int y1 = posY  + dy;
+            int y2 = sizeY + y1;
+
+            // checking if both the ends are within the boarder
+            bool x = (x1 >= 0 && x1 < gridX) && (x2 >= 0 && x2 < gridX);
+            bool y = (y1 >= 0 && y1 < gridY) && (y2 >= 0 && y2 < gridY);
+
+            return x && y;
+        }
+
+        // checks if another ship collides with this one
+        bool CheckCollitionShip (BattleShip battleShip)
+        {
+            // making sure both x points dont collide along a 1d line (ship1)
+            bool ship1X1 = (posX         >= battleShip.posX) && (posX         <= battleShip.posX + battleShip.sizeX);
+            bool ship1X2 = (posX + sizeX >= battleShip.posX) && (posX + sizeX <= battleShip.posX + battleShip.sizeX);
+
+            // making sure both y points dont collide along a 1d line (ship1)
+            bool ship1Y1 = (posY         >= battleShip.posY) && (posY         <= battleShip.posY + battleShip.sizeY);
+            bool ship1Y2 = (posY + sizeY >= battleShip.posY) && (posY + sizeY <= battleShip.posY + battleShip.sizeY);
+
+            // making sure both x points dont collide along a 1d line (ship2)
+            bool ship2X1 = (battleShip.posX                    >= posX) && (battleShip.posX                    <= posX + sizeX);
+            bool ship2X2 = (battleShip.posX + battleShip.sizeX >= posX) && (battleShip.posX + battleShip.sizeX <= posX + sizeX);
+
+            // making sure both y points dont collide along a 1d line (ship2)
+            bool ship2Y1 = (battleShip.posY                    >= posY) && (battleShip.posY                    <= posY + sizeY);
+            bool ship2Y2 = (battleShip.posY + battleShip.sizeY >= posY) && (battleShip.posY + battleShip.sizeY <= posY + sizeY);
+
+            // checking the first ships collition
+            bool collided = (ship1X1 || ship1X2 || ship2X1 || ship2X2) && (ship1Y1 || ship1Y2 || ship2Y1 || ship2Y2);
+
+            return collided;
+        }
 };
 
 
 // renders the baord
-void RenderBaord(BattleShip battleShips[], int hitsX[], int hitsY[], int hits, int missesX[], int missesY[], int misses, int totalShips)
+void RenderBaord(BattleShip* battleShips, int* hitsX, int* hitsY, int hits, int* missesX, int* missesY, int misses, int totalShips)
 {
     std::cout << "----------------------" << std::endl;
     // looping through the layers
@@ -93,27 +158,11 @@ void RenderBaord(BattleShip battleShips[], int hitsX[], int hitsY[], int hits, i
     std::cout << "----------------------" << std::endl;
 }
 
-// the main program
-int main()
+
+// gets the battle ships
+BattleShip* GetBattleships()
 {
-    // the number of each ship (so its changeable and because I don't know how many of each there are)
-    int numCarriers    = 1;
-    int numBattleships = 1;
-    int numCruisers    = 1;
-    int numSubmarines  = 1;
-    int numDestroyers  = 1;
-
-    int shipSizes[5] = {4, 3, 2, 2, 1};  // 1 less than the actuall size btw
-    std::string shipNames[5] = {"Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"};
-
-    // some info on the ships (based on the settings)
-    int totalShips = numCarriers + numBattleships + numCruisers + numSubmarines + numDestroyers;
-    int numShips[5] = {numCarriers, numBattleships, numCruisers, numSubmarines, numDestroyers};
-
-    BattleShip ships1[5];
-
-    // an empty list of ints (for use when placing ships)
-    int emptyIntList[0];
+    BattleShip* ships = new BattleShip[totalShips];  // all the ships
 
     // placing ships on the board
     float currentType = 0;
@@ -122,52 +171,218 @@ int main()
         int shipIndex = currentType;
 
         // basic veriables for the ship
-        bool hit[5];
         int xPos = 0;
         int yPos = 0;
         int ySize = 0;
+        
         std::string input;
+        
+        int length = shipSizes[shipIndex];
+        int xSize = length;
+
+        bool hit[length];
+
+        bool collided;
         bool placed = false;
-        int xSize = shipSizes[shipIndex];
-        ships1[i] = BattleShip(xSize, ySize, xPos, yPos, hit);
-        // rendering the board (so you can see where the ship is)
-        RenderBaord(ships1, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, i + 1);
+        ships[i] = BattleShip(xSize, ySize, xPos, yPos, length, hit);  // adding a temporary battleship (gets updated, used for rendering)
         while (!placed)
         {
+            RenderBaord(ships, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, i + 1);
             // printing out the basic information (size, inputs, ect...)
             std::cout << shipNames[shipIndex] << "\nSize: " << shipSizes[shipIndex] + 1 << "\np to place\nr to rotate\nwasd to move\n > ";
             std::cin >> input;
             
             // interpreting the inputed information
-            if (input == "p") placed = true;  // loop i-1 times and check for collition before placing pices
-            else if (input == "w") yPos--;
-            else if (input == "a") xPos--;
-            else if (input == "s") yPos++;
-            else if (input == "d") xPos++;
+            if (input == "p")
+            {
+                // checking if the ship is overlapping another ship
+                collided = false;
+                for (int j = 0; j < i; j++)
+                {
+                    // checking for collision with the other ship
+                    collided = ships[i].CheckCollitionShip(ships[j]);
+                    if (collided) break;
+                }
+
+                // checking if any ship overlapped the one being placed
+                placed = !collided;
+            }
+            else if (input == "w" && ships[i].CheckMovement( 0, -1)) yPos--;
+            else if (input == "a" && ships[i].CheckMovement(-1,  0)) xPos--;
+            else if (input == "s" && ships[i].CheckMovement( 0,  1)) yPos++;
+            else if (input == "d" && ships[i].CheckMovement( 1,  0)) xPos++;
             else if (input == "r")
             {
+                int nx, ny;
+
                 // checking the current rotation and changing the rotation from there
                 if (ySize == 0)
                 {
-                    xSize = 0;
-                    ySize = shipSizes[shipIndex];
+                    nx = 0;
+                    ny = length;
                 }
                 else
                 {
-                    xSize = shipSizes[shipIndex];
-                    ySize = 0;
+                    nx = length;
+                    ny = 0;
+                }
+
+                // checking if the rotation is within bounds
+                if (BattleShip(nx, ny, xPos, yPos, length, hit).CheckMovement(0, 0))
+                {
+                    // rotating the ship
+                    xSize = nx;
+                    ySize = ny;
                 }
             }
 
-            // creating the new battleship
-            ships1[i] = BattleShip(xSize, ySize, xPos, yPos, hit);
-
             // rendering the new setup
-            RenderBaord(ships1, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, i + 1);
+            ships[i] = BattleShip(xSize, ySize, xPos, yPos, length, hit);  // adding/overwriting with a new battleship
         }
 
         currentType += 1./(float)numShips[shipIndex];  // incrementing the type index
     }
+
+    return ships;
+}
+
+
+// auto sets up a board
+BattleShip* SetupAI()
+{
+    // for random numbers (used for auto placing ships)
+    srand((unsigned)time(NULL));
+
+    BattleShip battleShip;
+    BattleShip* ships = new BattleShip[totalShips];  // all the ships
+
+    float currentType = 0;
+    for (int i = 0; i < totalShips; i++)
+    {
+        int shipIndex = currentType;
+
+        bool placed = false;
+        while (!placed)
+        {
+            // finding the random values
+            int r = round((float)rand() / RAND_MAX);
+            int x = round((((float)rand() / RAND_MAX) * (gridX - 1)));
+            int y = round((((float)rand() / RAND_MAX) * (gridY - 1)));
+
+            // finding the size
+            int length = shipSizes[shipIndex];
+            bool hit[length];
+
+            int sizeX = length;
+            int sizeY = 0;
+
+            if (r == 0)
+            {
+                sizeX = 0;
+                sizeY = length;
+            }
+
+            // creating a new ship
+            battleShip = BattleShip(sizeX, sizeY, x, y, length, hit);
+
+            // checking if the ship fits
+            bool collided = false;
+            for (int j = 0; j < i; j++)
+            {
+                collided = battleShip.CheckCollitionShip(ships[j]);
+                if (collided) break;
+            }
+
+            // adding the ship
+            placed = !collided;
+            if (placed)
+            {
+                int x1 = x;
+                int x2 = x + sizeX;
+
+                int y1 = y;
+                int y2 = y + sizeY;
+                
+                // checking if the ship is on the board (in bounds)
+                if (x1 >= 0 && x2 < gridX && y1 >= 0 && y2 < gridY) ships[i] = battleShip;
+                else placed = false;
+            }
+        }
+
+        currentType += 1./(float)numShips[shipIndex];
+    }
+
+    return ships;
+}
+
+
+// clears the terminal (sort of)
+void Clear()
+{
+    std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+}
+
+
+// the main program
+int main()
+{
+    std::string null;  // used  for awaiting the players next action (never is read just used to write junk to something)
+    std::string usrInput;  // used for the players input (mostly on settings and stuff)
+
+    // checking if the first player is using auto fill
+    std::cout << "Setings\n(y/n) AI Opponent > ";
+    std::cin >> usrInput;
+
+    bool AI = false;
+    if (usrInput == "y") AI = true;
+
+    BattleShip* battleShips1;  // getting the first players ship setup
+    
+    if (!AI) battleShips1 = GetBattleships();
+    else
+    {
+        battleShips1 = SetupAI();  // getting the random board
+
+        // rendering the placed ships
+        RenderBaord(battleShips1, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, totalShips);
+        std::cout << "\nShips Auto Placed" << std::endl;
+
+        // waiting for the player to look at their board
+        std::cout << "Type Anything To Continue\n > ";
+        std::cin >> null;  // waiting for the next player to take over
+    }
+
+    // clearing the board so you can't cheat
+    Clear();
+    std::cout << "Type Anything To Continue\n > ";
+    std::cin >> null;  // waiting for the next player to take over
+    
+    // checking if the second player is using auto fill
+    std::cout << "Setings\n(y/n) AI Opponent > ";
+    std::cin >> usrInput;
+
+    AI = false;
+    if (usrInput == "y") AI = true;
+
+    BattleShip* battleShips2;
+
+    if (!AI) battleShips2 = GetBattleships();  // getting the first players ship setup
+    else
+    {
+        battleShips2 = SetupAI();  // getting the random board
+
+        // rendering the placed ships
+        RenderBaord(battleShips2, emptyIntList, emptyIntList, 0, emptyIntList, emptyIntList, 0, totalShips);
+        std::cout << "\nShips Auto Placed" << std::endl;
+
+        // waiting for the player to look at their board
+        std::cout << "Type Anything To Continue\n > ";
+        std::cin >> null;  // waiting for the next player to take over
+    }
+
+    // cleaning up the memory
+    delete battleShips1;
+    delete battleShips2;
 
     return 0;  // ending the program
 }
