@@ -15,9 +15,14 @@ static int numDestroyers  = 1;
 static int shipSizes[5] = {4, 3, 2, 2, 1};  // the length of the ships (1 less than the actuall size)
 static std::string shipNames[5] = {"Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"};
 
+static std::string abcd[10] = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "J"};
+
 // some info on the ships (based on the settings)
 static int totalShips = numCarriers + numBattleships + numCruisers + numSubmarines + numDestroyers;
 static int numShips[5] = {numCarriers, numBattleships, numCruisers, numSubmarines, numDestroyers};
+
+// the total combined length of all the ships (used for detecting a win)
+static int totalLength = (shipSizes[0]+1) * numCarriers + (shipSizes[1]+1) * numBattleships + (shipSizes[2]+1) * numCruisers + (shipSizes[3]+1) * numSubmarines + (shipSizes[4]+1) * numDestroyers;
 
 // an empty list of ints (for use when placing ships sense there are no hits/misses)
 static int emptyIntList[0];
@@ -55,16 +60,6 @@ class BattleShip
             bool xCol = x >= posX && x <= posX + sizeX;
             bool yCol = y >= posY && y <= posY + sizeY;
             return xCol && yCol;
-        }
-
-        // checks for collition between two rectangles
-        bool CheckCollition(int sx, int sy, int px, int py)
-        {
-            bool tlPoint = PointRectCollition(px     , py + sy);
-            bool trPoint = PointRectCollition(px + sx, py + sy);
-            bool blPoint = PointRectCollition(px     , py     );
-            bool brPoint = PointRectCollition(px + sx, py     );
-            return tlPoint && trPoint && blPoint && brPoint;
         }
 
         // checks if a movement will keep the ship on the board
@@ -114,11 +109,13 @@ class BattleShip
 // renders the baord
 void RenderBaord(BattleShip* battleShips, int* hitsX, int* hitsY, int hits, int* missesX, int* missesY, int misses, int totalShips)
 {
-    std::cout << "----------------------" << std::endl;
+    std::cout << " -1-2-3-4-5-6-7-8-9-10-" << std::endl;
+    std::cout << " ----------------------" << std::endl;
+
     // looping through the layers
     for (int y = 0; y < gridY; y++)
     {
-        std::cout << "|";
+        std::cout << abcd[y] << "|";
         // looping through the rows
         for (int x = 0; x < gridX; x++)
         {
@@ -155,7 +152,7 @@ void RenderBaord(BattleShip* battleShips, int* hitsX, int* hitsY, int hits, int*
         }
         std::cout << "|" << std::endl;
     }
-    std::cout << "----------------------" << std::endl;
+    std::cout << " ----------------------" << std::endl;
 }
 
 
@@ -250,9 +247,6 @@ BattleShip* GetBattleships()
 // auto sets up a board
 BattleShip* SetupAI()
 {
-    // for random numbers (used for auto placing ships)
-    srand((unsigned)time(NULL));
-
     BattleShip battleShip;
     BattleShip* ships = new BattleShip[totalShips];  // all the ships
 
@@ -323,9 +317,22 @@ void Clear()
 }
 
 
+template<typename T>
+int GetIndex(T* array, T item, int l)
+{
+    for (int i = 0; i < l; i++)
+    {
+        if (array[i] == item) return i;
+    }
+    return -1;
+}
+
+
 // the main program
 int main()
 {
+    srand((unsigned)time(NULL));  // setting up for random numbers
+
     std::string null;  // used  for awaiting the players next action (never is read just used to write junk to something)
     std::string usrInput;  // used for the players input (mostly on settings and stuff)
 
@@ -333,12 +340,19 @@ int main()
     std::cout << "Setings\n(y/n) AI Opponent > ";
     std::cin >> usrInput;
 
+    // checking if the player chose AI or not
     bool AI = false;
     if (usrInput == "y") AI = true;
 
-    BattleShip* battleShips1;  // getting the first players ship setup
+    BattleShip* battleShips1;
     
-    if (!AI) battleShips1 = GetBattleships();
+    if (!AI)
+    {
+        battleShips1 = GetBattleships();  // getting the first players ship setup
+
+        std::cout << "Type Anything To Continue\n > ";
+        std::cin >> null;  // waiting for the next player to take over
+    }
     else
     {
         battleShips1 = SetupAI();  // getting the random board
@@ -354,19 +368,26 @@ int main()
 
     // clearing the board so you can't cheat
     Clear();
-    std::cout << "Type Anything To Continue\n > ";
+    std::cout << "Player 2's Turn\nType Anything To Continue\n > ";
     std::cin >> null;  // waiting for the next player to take over
     
     // checking if the second player is using auto fill
     std::cout << "Setings\n(y/n) AI Opponent > ";
     std::cin >> usrInput;
 
+    // checking if the player chose AI or not
     AI = false;
     if (usrInput == "y") AI = true;
 
     BattleShip* battleShips2;
 
-    if (!AI) battleShips2 = GetBattleships();  // getting the first players ship setup
+    if (!AI)
+    {
+        battleShips2 = GetBattleships();  // getting the second players ship setup
+
+        std::cout << "Type Anything To Continue\n > ";
+        std::cin >> null;  // waiting for the next player to take over
+    }
     else
     {
         battleShips2 = SetupAI();  // getting the random board
@@ -378,6 +399,232 @@ int main()
         // waiting for the player to look at their board
         std::cout << "Type Anything To Continue\n > ";
         std::cin >> null;  // waiting for the next player to take over
+    }
+
+    // all the hits for player 1
+    int hits1X[gridX * gridY];
+    int hits1Y[gridX * gridY];
+    int numHits1 = 0;
+    // all the misses for player 1
+    int misses1X[gridX * gridY];
+    int misses1Y[gridX * gridY];
+    int numMisses1 = 0;
+
+    // all the hits from player 1 on player 2
+    int hits2X[gridX * gridY];
+    int hits2Y[gridX * gridY];
+    int numHits2 = 0;
+    // all the misses for player 2 on player 1
+    int misses2X[gridX * gridY];
+    int misses2Y[gridX * gridY];
+    int numMisses2 = 0;
+
+    // resseting the screen before starting the game
+    Clear();
+
+    // starting on a random players turn
+    int turn = round((float)rand() / RAND_MAX);
+
+    // a loop that goes while the game is running
+    while (true)
+    {
+        // clearing the screen so you can't see the other players ships
+        Clear();
+        std::cout << "Player " << turn + 1 <<  "'s turn\nType Anything To Continue\n > ";
+        std::cin >> null;  // waiting for the next player to take over
+
+        if (turn == 0)
+        {
+            // showing your hits and opponents hits
+            RenderBaord(battleShips1, hits1X, hits1Y, numHits1, misses1X, misses1Y, numMisses1, 0);
+            std::cout << " " << std::endl;
+            RenderBaord(battleShips1, hits2X, hits2Y, numHits2, misses2X, misses2Y, numMisses2, totalShips);
+
+            // positions for a hit/miss
+            std::string stringX, stringY;
+            int x, y;
+
+            bool valid = false;  // making sure you not guessing ontop of a guess
+
+            while (!valid)
+            {
+                // finding the pos of the new hit/miss
+                std::cout << "(number) X > ";
+                std::cin >> stringX;
+                std::cout << "(letter) Y > ";
+                std::cin >> stringY;
+
+                // getting the intiger position of the point
+                x = stoi(stringX) - 1;
+                y = GetIndex(abcd, stringY, 10);
+
+                // checking for overlapping
+                bool overlapped = false;
+                for (int i = 0; i < numMisses1; i++)
+                {
+                    if (misses1X[i] == x && misses1Y[i] == y)
+                    {
+                        // going to the end and setting it to overlapping (saves processing time i guess)
+                        overlapped = true;
+                        goto end1;
+                    }
+                }
+
+                for (int i = 0; i < numHits1; i++)
+                {
+                    if (hits1X[i] == x && hits1Y[i] == y)
+                    {
+                        // going to the end and setting it to overlapping (saves processing time i guess)
+                        overlapped = true;
+                        goto end1;
+                    }
+                }
+
+            end1:
+
+                // checking for any overlap
+                if (!overlapped) valid = true;
+
+            }
+
+            // checking for a hit
+            bool hitShip = false;
+            for (int i = 0; i < totalShips; i++)
+            {
+                if (battleShips2[i].PointRectCollition(x, y))
+                {
+                    // adding a new hit
+                    hitShip = true;
+
+                    hits1X[numHits1] = x;
+                    hits1Y[numHits1] = y;
+
+                    numHits1++;
+                    
+                    std::cout << "Hit!!!!!" << std::endl;
+                }
+            }
+
+            if (!hitShip)
+            {
+                // adding a new miss
+                misses1X[numMisses1] = x;
+                misses1Y[numMisses1] = y;
+
+                numMisses1++;
+
+                std::cout << "Miss..." << std::endl;
+            }
+
+            turn = 1;
+
+            std::cout << "Type Anything To Continue\n > ";
+            std::cin >> null;  // waiting for the next player to take over
+        }
+        else
+        {
+            // showing your hits and opponents hits
+            RenderBaord(battleShips2, hits2X, hits2Y, numHits2, misses2X, misses2Y, numMisses2, 0);
+            std::cout << " " << std::endl;
+            RenderBaord(battleShips2, hits1X, hits1Y, numHits1, misses1X, misses1Y, numMisses1, totalShips);
+
+            // positions for a hit/miss
+            std::string stringX, stringY;
+            int x, y;
+
+            bool valid = false;  // making sure you not guessing ontop of a guess
+
+            while (!valid)
+            {
+                // finding the pos of the new hit/miss
+                std::cout << "(number) X > ";
+                std::cin >> stringX;
+                std::cout << "(letter) Y > ";
+                std::cin >> stringY;
+
+                // getting the intiger position of the point
+                x = stoi(stringX) - 1;
+                y = GetIndex(abcd, stringY, 10);
+
+                // checking for overlapping
+                bool overlapped = false;
+                for (int i = 0; i < numMisses2; i++)
+                {
+                    if (misses2X[i] == x && misses2Y[i] == y)
+                    {
+                        // going to the end and setting it to overlapping (saves processing time i guess)
+                        overlapped = true;
+                        goto end2;
+                    }
+                }
+
+                for (int i = 0; i < numHits2; i++)
+                {
+                    if (hits2X[i] == x && hits2Y[i] == y)
+                    {
+                        // going to the end and setting it to overlapping (saves processing time i guess)
+                        overlapped = true;
+                        goto end2;
+                    }
+                }
+
+            end2:
+
+                // checking for any overlap
+                if (!overlapped) valid = true;
+
+            }
+
+            // checking for a hit
+            bool hitShip = false;
+            for (int i = 0; i < totalShips; i++)
+            {
+                if (battleShips1[i].PointRectCollition(x, y))
+                {
+                    // adding a new hit
+                    hitShip = true;
+
+                    hits2X[numHits2] = x;
+                    hits2Y[numHits2] = y;
+
+                    numHits2++;
+
+                    std::cout << "Hit!!!!!" << std::endl;
+                }
+            }
+
+            if (!hitShip)
+            {
+                // adding a new miss
+                misses2X[numMisses2] = x;
+                misses2Y[numMisses2] = y;
+
+                numMisses2++;
+
+                std::cout << "Miss..." << std::endl;
+            }
+
+            turn = 0;
+
+            std::cout << "Type Anything To Continue\n > ";
+            std::cin >> null;  // waiting for the next player to take over
+        }
+
+        // checking if player 1 won
+        if (numHits1 == totalLength)
+        {
+            Clear();
+            std::cout << "Player 1 Wins!!!!!!!";
+
+            break;
+        }
+        else if (numHits2 == totalLength)  // checking if player 2 won
+        {
+            Clear();
+            std::cout << "Player 2 Wins!!!!!!!";
+
+            break;
+        }
     }
 
     // cleaning up the memory
