@@ -13,4 +13,4 @@ The game as of 8/19/22
 
 # Future Plans
 
-I may end up adding an AI to play the game. I also soon will add a message for whenever you sink a ship. The game is mostly complete.
+I may end up adding an AI to play the game. I will also be adding the Java version of this project soon. The Java version will be the same and currently needs the gameplay to be added. In the Java version you only can currently place ships (for player 1 and 2) without an auto place.
