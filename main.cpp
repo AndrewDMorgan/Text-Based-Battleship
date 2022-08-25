@@ -502,6 +502,22 @@ int main()
                     numHits1++;
                     
                     std::cout << "Hit!!!!!" << std::endl;
+
+                    // checking if the ship was sunk
+                    int shiftX = 1. / battleShips2[i].length * (battleShips2[i].sizeX == 0 ? 0 : 1);
+                    int shiftY = 1. / battleShips2[i].length * (battleShips2[i].sizeY == 0 ? 0 : 1);
+
+                    // looping across the entire ship
+                    int numPoints = 0;
+                    for (int j = 0; j < numHits1; j++)
+                    {
+                        // checking for the point
+                        if (battleShips2[i].PointRectCollition(hits1X[j], hits1Y[j])) numPoints++;
+                    }
+
+                    // checking if ever pos of the ship was struck
+                    if (numPoints > battleShips2[i].length) std::cout << "Ship Sunk!!" << std::endl;
+
                 }
             }
 
@@ -590,6 +606,21 @@ int main()
                     numHits2++;
 
                     std::cout << "Hit!!!!!" << std::endl;
+
+                    // checking if the ship was sunk
+                    int shiftX = 1. / battleShips1[i].length * (battleShips1[i].sizeX == 0 ? 0 : 1);
+                    int shiftY = 1. / battleShips1[i].length * (battleShips1[i].sizeY == 0 ? 0 : 1);
+
+                    // looping across the entire ship
+                    int numPoints = 0;
+                    for (int j = 0; j < numHits2; j++)
+                    {
+                        // checking for the point
+                        if (battleShips1[i].PointRectCollition(hits2X[j], hits2Y[j])) numPoints++;
+                    }
+                    
+                    // checking if ever pos of the ship was struck
+                    if (numPoints > battleShips1[i].length) std::cout << "Ship Sunk!!" << std::endl;
                 }
             }
 
