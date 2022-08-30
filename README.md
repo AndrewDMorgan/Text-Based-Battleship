@@ -13,4 +13,4 @@ The game as of 8/19/22
 
 # Future Plans
 
-I may end up adding an AI to play the game. I will also be adding the Java version of this project soon. The Java version will be the same and currently needs the gameplay to be added. In the Java version you only can currently place ships (for player 1 and 2) without an auto place.
+I am currently working on a version of this in Java. It mostly completed but the main gameplay is still being programmed. I may end up creating an AI for this using branches to find the collective highest entrophy possible from a set of moves (I think this is how to descibe it). I will be uploading the final code for the Java version but from there I don't know what will happen with this project.
